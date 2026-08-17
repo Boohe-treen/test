@@ -1,6 +1,5 @@
-// 如果是 COMMAND：不写 return 或只写 return;
-// 如果是 REPORTER：必须 return 值
-// 如果是 BOOLEAN：必须 return true/false
+//boohe-treen
+//(✿◡‿◡)
 (function (Scratch) {
     'use strict';
 
