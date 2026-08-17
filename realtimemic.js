@@ -18,7 +18,7 @@
             return {
                 id: 'mic',
                 name: '薄荷醇的实时麦克风',
-                color1: '#FF0010',
+                color1: '#66ffb1',
 
                 blocks: [
 
