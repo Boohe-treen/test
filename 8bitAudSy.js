@@ -8,6 +8,7 @@
             this.audioQueue = [];
             this.isPlaying = false;
             this.audioContext = null;
+            this.volume = 0.1;
         }
         //-----------------------------------------------------↑0
 
@@ -40,11 +41,35 @@
                         }
                     },
 
-                    // ⭐ 新增：停止积木
+                    //停止
                     {
                         opcode: 'stopAll',
                         blockType: 'command',
                         text: '立即停止所有声音'
+                    },
+
+                    {
+                        opcode: 'adjustVolume',
+                        blockType: 'command',
+                        text: '将合成器音量设为[音量]',
+                        arguments: {
+                            音量: {
+                                type: 'number',
+                                defaultValue: 10
+                            }
+                        }
+                    },
+
+                    {
+                        opcode: 'rest',
+                        blockType: 'command',
+                        text: '休止 [restTime] 拍',
+                        arguments: {
+                            restTime: {
+                                type: 'number',
+                                defaultValue: 1
+                            }
+                        }
                     }
 
                 ],
@@ -84,6 +109,15 @@
             const task = this.audioQueue.shift();
             this.isPlaying = true;
 
+            // 处理休止符
+            if (task.type === 'rest') {
+                setTimeout(() => {
+                    this.isPlaying = false;
+                    this.processQueue();
+                }, task.duration * 1000);
+                return;
+            }
+
             if (!this.audioContext || this.audioContext.state === 'closed') {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
@@ -91,7 +125,13 @@
             const oscillator = this.audioContext.createOscillator();
             oscillator.type = task.waveform;
             oscillator.frequency.value = task.freq;
-            oscillator.connect(this.audioContext.destination);
+
+            const gainNode = this.audioContext.createGain();
+            gainNode.gain.value = this.volume;
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + task.duration);
 
@@ -103,7 +143,7 @@
         //-----------------------------------------------------↑2.5
 
         //-----------------------------------------------------↓4
-        // ⭐ 新增：立即停止所有声音
+
         stopAll() {
             this.audioQueue = [];
             this.isPlaying = false;
@@ -113,9 +153,36 @@
                 this.audioContext = null;
             }
 
-            console.log("🔇 所有声音已停止");
+            console.log("停止");
         }
         //-----------------------------------------------------↑4
+
+        //-----------------------------------------------------↓5
+        adjustVolume(args) {
+            const vol = Number(args.音量);
+
+            
+            if (!isNaN(vol) && vol >= 0 && vol <= 20) {
+                this.volume = vol / 100;
+                
+            } else {
+                console.warn("填 0~20 的数字");
+            }
+        }
+        //-----------------------------------------------------↑5
+
+        //-----------------------------------------------------↓6
+        rest(args) {
+            const duration = Number(args.restTime);
+            if (isNaN(duration) || duration <= 0) {
+                console.warn("休止时间无效，请填大于 0 的数字");
+                return;
+            }
+
+            this.audioQueue.push({ type: 'rest', duration });
+            this.processQueue();
+        }
+        //-----------------------------------------------------↑6
     }
 
     Scratch.extensions.register(new eightbitAudioSynthesizer());
